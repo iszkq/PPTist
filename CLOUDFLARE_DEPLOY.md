@@ -2,6 +2,8 @@
 
 本仓库按纯静态 Vue/Vite 应用部署，不需要数据库或常驻后端。
 
+线上地址：<https://pptist-dcd.pages.dev/>
+
 ## Cloudflare Pages 设置
 
 - Git 仓库：`iszkq/PPTist`
