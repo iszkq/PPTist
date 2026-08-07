@@ -1,1 +1,1 @@
-export type DialogForExportTypes = 'image' | 'pdf' | 'json' | 'pptx' | 'pptist' | 'nativeOverlay' | ''
+export type DialogForExportTypes = 'image' | 'pdf' | 'json' | 'pptx' | 'pptist' | ''

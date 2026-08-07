@@ -36,6 +36,42 @@ public sealed class WidgetStore
         }
     }
 
+    public WidgetDefinition? Get(string presentationKey, int slideIndex, string id)
+    {
+        lock (_lock)
+        {
+            return _widgets.FirstOrDefault(item =>
+                string.Equals(item.PresentationKey, presentationKey, StringComparison.OrdinalIgnoreCase) &&
+                item.SlideIndex == slideIndex &&
+                item.Id == id);
+        }
+    }
+
+    public void Upsert(WidgetDefinition widget)
+    {
+        if (string.IsNullOrWhiteSpace(widget.PresentationKey)) throw new ArgumentException("Presentation key is required.", nameof(widget));
+        lock (_lock)
+        {
+            var index = _widgets.FindIndex(item =>
+                string.Equals(item.Id, widget.Id, StringComparison.Ordinal) &&
+                item.SlideIndex == widget.SlideIndex &&
+                string.Equals(item.PresentationKey, widget.PresentationKey, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0) _widgets[index] = widget;
+            else _widgets.Add(widget);
+            Save();
+        }
+    }
+
+    public void Delete(string presentationKey, int slideIndex, string id)
+    {
+        lock (_lock)
+        {
+            _widgets.RemoveAll(item => item.Id == id && item.SlideIndex == slideIndex &&
+                string.Equals(item.PresentationKey, presentationKey, StringComparison.OrdinalIgnoreCase));
+            Save();
+        }
+    }
+
     private void Load()
     {
         if (!File.Exists(_filePath)) return;

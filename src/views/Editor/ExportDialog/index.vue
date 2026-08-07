@@ -23,7 +23,6 @@ import ExportJSON from './ExportJSON.vue'
 import ExportPDF from './ExportPDF.vue'
 import ExportPPTX from './ExportPPTX.vue'
 import ExportSpecificFile from './ExportSpecificFile.vue'
-import ExportNativeOverlay from './ExportNativeOverlay.vue'
 import Tabs from '@/components/Tabs.vue'
 
 interface TabItem {
@@ -38,7 +37,6 @@ const setDialogForExport = mainStore.setDialogForExport
 
 const tabs: TabItem[] = [
   { key: 'pptist', label: '导出 PPTIST 文件' },
-  { key: 'nativeOverlay', label: '同步原生放映' },
   { key: 'pptx', label: '导出 PPTX' },
   { key: 'image', label: '导出图片' },
   { key: 'json', label: '导出 JSON' },
@@ -52,7 +50,6 @@ const currentDialogComponent = computed<unknown>(() => {
     'pdf': ExportPDF,
     'pptx': ExportPPTX,
     'pptist': ExportSpecificFile,
-    'nativeOverlay': ExportNativeOverlay,
   }
   if (dialogForExport.value) return dialogMap[dialogForExport.value] || null
   return null
