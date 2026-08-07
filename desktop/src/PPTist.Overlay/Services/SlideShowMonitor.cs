@@ -22,7 +22,10 @@ public sealed class SlideShowMonitor : IDisposable
 
     private void Poll()
     {
-        var current = TryGetSlide("PowerPoint.Application", "office") ?? TryGetSlide("KWPP.Application", "wps");
+        // Only Microsoft PowerPoint is supported.  Keeping this single host avoids
+        // repeatedly probing unrelated presentation applications while a slide show
+        // is running, which was a source of needless COM traffic and lag.
+        var current = TryGetSlide("PowerPoint.Application", "powerpoint");
         if (current is null)
         {
             if (_lastState is not null) SlideShowEnded?.Invoke(this, EventArgs.Empty);

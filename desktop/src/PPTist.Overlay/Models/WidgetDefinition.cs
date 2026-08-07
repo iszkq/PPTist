@@ -3,6 +3,7 @@ namespace PPTist.Overlay.Models;
 public sealed class WidgetDefinition
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Name { get; set; } = "HTML 动效";
     public string PresentationKey { get; set; } = string.Empty;
     public int SlideIndex { get; set; }
     public double Left { get; set; }

@@ -1,5 +1,5 @@
-# PowerPoint 适配
+# Microsoft PowerPoint 加载项
 
-PowerPoint 使用 `PPTist.HostAddin` COM Add-in。安装器在当前用户注册表中注册插件，并写入 PowerPoint 的 Addins 配置；重新打开 PowerPoint 后会出现“PPTist 动效”功能区选项卡。
+PPTist 使用 PowerPoint 官方 Office Add-in（任务窗格）作为编辑入口。它不会把 .NET、WPF 或 WebView2 注入 `POWERPNT.EXE`，因此不会影响原生动画、动画窗格、触发器、音视频和翻页。
 
-插件从当前 PowerPoint 文稿和当前页读取上下文，组件配置直接写入本机组件库。放映则交给 `PPTist.Overlay` 跟随原生放映窗口完成，不接管 PowerPoint 的动画和翻页。
+安装后在 PowerPoint 中选择“文件 → 获取加载项 → 管理我的加载项 → 上传我的加载项”，上传 `office-addin/manifest.xml`。加载项任务窗格通过本地 companion 的 `http://127.0.0.1:32147` 保存组件，放映时由独立覆盖层渲染透明 HTML。

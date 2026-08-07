@@ -36,6 +36,14 @@ public sealed class WidgetStore
         }
     }
 
+    public IReadOnlyList<WidgetDefinition> GetForPresentation(string presentationKey)
+    {
+        lock (_lock)
+        {
+            return _widgets.Where(item => string.Equals(item.PresentationKey, presentationKey, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+    }
+
     public WidgetDefinition? Get(string presentationKey, int slideIndex, string id)
     {
         lock (_lock)

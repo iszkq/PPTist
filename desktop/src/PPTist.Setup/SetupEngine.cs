@@ -1,32 +1,27 @@
 using Microsoft.Win32;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace PPTist.Setup;
 
+/// Installs the companion overlay and registers an Office Add-in catalog.
+/// Nothing from this process is loaded into POWERPNT.EXE.
 internal sealed class SetupEngine(Action<string> report)
 {
-    private const string ProgId = "PPTist.HostAddin";
-    private const string Clsid = "{E5707554-F46A-4F29-A918-5FEAD9A8F136}";
+    private static readonly Guid CatalogId = new("2c7d5d7a-2664-4b59-b8d1-37c2cfecf43a");
     private readonly Action<string> _report = report;
     private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
     private readonly string _root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PPTistPlugin");
 
     public void Install()
     {
-        _report("正在释放插件文件…");
+        _report("正在释放 PPTist 放映组件…");
         ExtractPayload();
-        _report("正在安装必要运行环境…");
-        EnsureDesktopRuntime("x64");
-        EnsureDesktopRuntime("x86");
-        _report("正在注册 PowerPoint / WPS 插件…");
-        RegisterComAddin(RegistryView.Registry64, Path.Combine(_root, "runtime", "PPTist.HostAddin.comhost.dll"));
-        if (Environment.Is64BitOperatingSystem) RegisterComAddin(RegistryView.Registry32, Path.Combine(_root, "addin-x86", "PPTist.HostAddin.comhost.dll"));
-        RegisterPowerPoint(RegistryView.Registry64);
-        if (Environment.Is64BitOperatingSystem) RegisterPowerPoint(RegistryView.Registry32);
-        _report("正在启动放映服务…");
+        _report("正在配置 PowerPoint 加载项目录…");
+        RegisterSharedFolderCatalog();
+        WriteInstructions();
+        _report("正在启动透明放映覆盖层…");
         EnableStartup();
         StartOverlay();
     }
@@ -44,51 +39,32 @@ internal sealed class SetupEngine(Action<string> report)
         }
     }
 
-    private void EnsureDesktopRuntime(string architecture)
+    private void RegisterSharedFolderCatalog()
     {
-        if (HasDesktopRuntime(architecture)) return;
-        var installer = Path.Combine(_root, "dependencies", "windowsdesktop-runtime-" + architecture + ".exe");
-        if (!File.Exists(installer)) throw new InvalidOperationException("缺少 .NET 8 Desktop Runtime 安装文件。");
-        var process = Process.Start(new ProcessStartInfo(installer, "/install /quiet /norestart") { UseShellExecute = true })
-            ?? throw new InvalidOperationException("无法启动 .NET Desktop Runtime 安装程序。");
-        process.WaitForExit();
-        if (process.ExitCode is not 0 and not 3010) throw new InvalidOperationException(".NET Desktop Runtime 安装失败，错误代码：" + process.ExitCode);
+        var manifestDirectory = Path.Combine(_root, "office-addin");
+        using var key = Registry.CurrentUser.CreateSubKey($@"Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{CatalogId:B}", true);
+        key?.SetValue("Id", CatalogId.ToString("B"));
+        key?.SetValue("Url", manifestDirectory);
+        key?.SetValue("Flags", 1, RegistryValueKind.DWord);
     }
 
-    private static bool HasDesktopRuntime(string architecture)
+    private void WriteInstructions()
     {
-        var view = architecture == "x86" ? RegistryView.Registry32 : RegistryView.Registry64;
-        using var root = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view);
-        using var key = root.OpenSubKey(@"SOFTWARE\dotnet\Setup\InstalledVersions\" + architecture + @"\sharedfx\Microsoft.WindowsDesktop.App");
-        return key?.GetValue("Version") is string version && Version.TryParse(version.Split('-')[0], out var parsed) && parsed.Major >= 8;
-    }
-
-    private void RegisterComAddin(RegistryView view, string comHost)
-    {
-        if (!File.Exists(comHost)) throw new InvalidOperationException("插件文件缺失：" + comHost);
-        using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, view);
-        using var inproc = baseKey.CreateSubKey(@"Software\Classes\CLSID\" + Clsid + @"\InprocServer32", true)!;
-        inproc.SetValue(null, comHost);
-        inproc.SetValue("ThreadingModel", "Both");
-        using var prog = baseKey.CreateSubKey(@"Software\Classes\" + ProgId, true)!;
-        prog.SetValue(null, "PPTist HTML animation add-in");
-        using var progClsid = prog.CreateSubKey("CLSID", true)!;
-        progClsid.SetValue(null, Clsid);
-    }
-
-    private static void RegisterPowerPoint(RegistryView view)
-    {
-        using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, view);
-        using var key = baseKey.CreateSubKey(@"Software\Microsoft\Office\PowerPoint\Addins\" + ProgId, true)!;
-        key.SetValue("FriendlyName", "PPTist HTML 动效");
-        key.SetValue("Description", "在当前演示页插入和编辑 HTML 动效");
-        key.SetValue("LoadBehavior", 3, RegistryValueKind.DWord);
+        var file = Path.Combine(_root, "PowerPoint-启用说明.txt");
+        File.WriteAllText(file, "PPTist HTML 动效\r\n\r\n" +
+            "1. 完全退出并重新打开 Microsoft PowerPoint。\r\n" +
+            "2. 文件 → 获取加载项 → 管理我的加载项 → 上传我的加载项。\r\n" +
+            "3. 选择本文件夹中的 office-addin\\manifest.xml。\r\n" +
+            "4. 打开任意 PPT/PPTX，在功能区点击“PPTist 动效 → 打开动效面板”。\r\n\r\n" +
+            "只支持 Microsoft PowerPoint；本安装包不会向 PowerPoint 注入 COM/.NET 代码。\r\n" +
+            "如果看不到上传入口，请在 PowerPoint 的加载项管理页选择“管理我的加载项”。\r\n", System.Text.Encoding.UTF8);
     }
 
     private void EnableStartup()
     {
-        using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true)!;
-        key.SetValue("PPTistOverlay", '"' + Path.Combine(_root, "runtime", "PPTist.Overlay.exe") + '"');
+        var exe = Path.Combine(_root, "runtime", "PPTist.Overlay.exe");
+        using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+        key?.SetValue("PPTistOverlay", '"' + exe + '"');
     }
 
     private void StartOverlay()

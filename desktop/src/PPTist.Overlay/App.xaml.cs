@@ -9,7 +9,6 @@ public partial class App : Application
 {
     private readonly WidgetStore _widgetStore = new();
     private readonly SlideShowMonitor _slideShowMonitor = new();
-    private readonly HostAddinActivator _hostAddinActivator = new();
     private LocalBridgeServer? _bridgeServer;
     private OverlayWindow? _overlay;
     private SlideState? _currentSlide;
@@ -43,7 +42,6 @@ public partial class App : Application
             _overlay?.HideOverlay();
         });
         _slideShowMonitor.Start();
-        _hostAddinActivator.Start();
     }
 
     private void RenderCurrentSlide()
@@ -56,7 +54,6 @@ public partial class App : Application
     private void OnExit(object sender, ExitEventArgs e)
     {
         _slideShowMonitor.Dispose();
-        _hostAddinActivator.Dispose();
         _bridgeServer?.Dispose();
     }
 }

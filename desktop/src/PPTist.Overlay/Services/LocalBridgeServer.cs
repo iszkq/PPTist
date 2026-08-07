@@ -8,6 +8,7 @@ namespace PPTist.Overlay.Services;
 
 public sealed class LocalBridgeServer : IDisposable
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly HttpListener _listener = new();
     private readonly WidgetStore _widgetStore;
     private readonly CancellationTokenSource _cancellation = new();
@@ -43,14 +44,26 @@ public sealed class LocalBridgeServer : IDisposable
     {
         context.Response.Headers["Access-Control-Allow-Origin"] = "*";
         context.Response.Headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS";
+        context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type";
         if (context.Request.HttpMethod == "OPTIONS") { context.Response.StatusCode = 204; context.Response.Close(); return; }
         if (context.Request.Url?.AbsolutePath == "/health") { await WriteAsync(context.Response, 200, "{\"status\":\"ok\"}"); return; }
+        if (context.Request.Url?.AbsolutePath == "/widgets" && context.Request.HttpMethod == "GET")
+        {
+            var presentationKey = context.Request.QueryString["presentationKey"];
+            if (string.IsNullOrWhiteSpace(presentationKey))
+            {
+                await WriteAsync(context.Response, 400, "{\"error\":\"presentationKey is required\"}");
+                return;
+            }
+            await WriteAsync(context.Response, 200, JsonSerializer.Serialize(_widgetStore.GetForPresentation(presentationKey), JsonOptions));
+            return;
+        }
         if (context.Request.Url?.AbsolutePath == "/widgets" && context.Request.HttpMethod == "POST")
         {
             try
             {
                 using var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8);
-                var request = JsonSerializer.Deserialize<WidgetUpdateRequest>(await reader.ReadToEndAsync());
+                var request = JsonSerializer.Deserialize<WidgetUpdateRequest>(await reader.ReadToEndAsync(), JsonOptions);
                 if (request is null || string.IsNullOrWhiteSpace(request.PresentationKey)) throw new InvalidOperationException();
                 _widgetStore.ReplaceForPresentation(request.PresentationKey, request.Widgets ?? []);
                 WidgetsChanged?.Invoke(this, EventArgs.Empty);

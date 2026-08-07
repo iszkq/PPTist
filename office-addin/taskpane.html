@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PPTist HTML 动效</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <link rel="stylesheet" href="taskpane.css">
+</head>
+<body>
+  <header><span class="logo">P</span><div><strong>PPTist HTML 动效</strong><small>仅适用于 Microsoft PowerPoint</small></div></header>
+  <p id="status" class="status">正在连接本地放映服务…</p>
+  <section class="document"><label>当前文稿</label><output id="documentName">正在读取…</output></section>
+  <section class="toolbar">
+    <label>页码 <input id="slideIndex" type="number" min="1" value="1"></label>
+    <button id="readSelection" type="button">读取当前页</button>
+    <button id="newWidget" type="button" class="primary">新建动效</button>
+  </section>
+  <p class="hint">“读取当前页”需要较新的 PowerPoint；不支持时可直接填写幻灯片页码。</p>
+  <main id="editor" hidden>
+    <label>组件名称 <input id="widgetName" maxlength="50" placeholder="例如：封面转盘"></label>
+    <div class="presets"><span>快速模板</span><button type="button" data-preset="blank">空白</button><button type="button" data-preset="wheel">幸运转盘</button><button type="button" data-preset="rain">雨滴照片</button><button type="button" data-preset="firefly">萤火虫</button></div>
+    <div class="grid">
+      <label>左 <input id="left" type="number" value="340"></label><label>上 <input id="top" type="number" value="130"></label>
+      <label>宽 <input id="width" type="number" value="320"></label><label>高 <input id="height" type="number" value="260"></label>
+    </div>
+    <label>HTML <textarea id="html" spellcheck="false" placeholder="&lt;div&gt;你的内容&lt;/div&gt;"></textarea></label>
+    <label>CSS <textarea id="css" spellcheck="false" placeholder=".your-class { ... }"></textarea></label>
+    <label>JavaScript <textarea id="javascript" spellcheck="false" placeholder="// 动画逻辑"></textarea></label>
+    <label>嵌入网页链接（可选）<input id="embedUrl" type="url" placeholder="https://example.com/animation"></label>
+    <div class="actions"><button id="save" type="button" class="primary">保存到此文稿</button><button id="remove" type="button" class="danger">删除</button></div>
+  </main>
+  <section><h2>本页组件</h2><div id="widgetList" class="widget-list"><p class="muted">尚未加载。</p></div></section>
+  <script src="taskpane.js"></script>
+</body>
+</html>
