@@ -16,7 +16,7 @@ $overlayProject = Join-Path $desktopRoot 'src\PPTist.Overlay\PPTist.Overlay.cspr
 $setupProject = Join-Path $desktopRoot 'src\PPTist.Setup\PPTist.Setup.csproj'
 
 New-Item -ItemType Directory -Force $runtimeRoot, $officeAddinRoot, $releaseRoot | Out-Null
-& $dotnet publish $overlayProject -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -o $runtimeRoot
+& $dotnet publish $overlayProject -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $runtimeRoot
 if ($LASTEXITCODE -ne 0) { throw 'Overlay runtime publish failed.' }
 Copy-Item -Path (Join-Path $repoRoot 'office-addin\*') -Destination $officeAddinRoot -Recurse -Force
 & $dotnet publish $setupProject -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PPTistPayloadDir=$payloadRoot -o $releaseRoot
