@@ -16,6 +16,8 @@ internal sealed class SetupEngine(Action<string> report)
 
     public void Install()
     {
+        _report("正在关闭旧版 PPTist 放映服务…");
+        StopInstalledOverlay();
         _report("正在释放 PPTist 放映组件…");
         ExtractPayload();
         _report("正在配置 PowerPoint 加载项目录…");
@@ -24,6 +26,39 @@ internal sealed class SetupEngine(Action<string> report)
         _report("正在启动透明放映覆盖层…");
         EnableStartup();
         StartOverlay();
+    }
+
+    private void StopInstalledOverlay()
+    {
+        var target = Path.GetFullPath(Path.Combine(_root, "runtime", "PPTist.Overlay.exe"));
+        foreach (var process in Process.GetProcessesByName("PPTist.Overlay"))
+        {
+            try
+            {
+                var executable = process.MainModule?.FileName;
+                if (string.IsNullOrWhiteSpace(executable) || !string.Equals(Path.GetFullPath(executable), target, StringComparison.OrdinalIgnoreCase))
+                {
+                    process.Dispose();
+                    continue;
+                }
+
+                process.CloseMainWindow();
+                if (!process.WaitForExit(2500))
+                {
+                    process.Kill(entireProcessTree: true);
+                    process.WaitForExit(5000);
+                }
+                if (!process.HasExited) throw new InvalidOperationException("旧版 PPTist 放映服务未能退出。");
+            }
+            catch (Exception exception) when (exception is not InvalidOperationException)
+            {
+                throw new InvalidOperationException("无法关闭正在运行的旧版 PPTist 放映服务，请在任务管理器中结束 PPTist.Overlay.exe 后重试。", exception);
+            }
+            finally
+            {
+                process.Dispose();
+            }
+        }
     }
 
     private void ExtractPayload()
