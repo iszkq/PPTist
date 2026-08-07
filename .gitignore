@@ -33,3 +33,5 @@ coverage
 desktop/**/bin/
 desktop/**/obj/
 desktop/publish/
+desktop/package/
+desktop/release/

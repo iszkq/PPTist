@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PPTist-Setup</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(PPTistPayloadDir)' != ''">
+    <EmbeddedResource Include="$(PPTistPayloadDir)\runtime\**\*">
+      <LogicalName>payload/runtime/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(PPTistPayloadDir)\addin-x86\**\*">
+      <LogicalName>payload/addin-x86/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(PPTistPayloadDir)\dependencies\**\*">
+      <LogicalName>payload/dependencies/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

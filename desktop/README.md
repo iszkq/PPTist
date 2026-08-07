@@ -11,7 +11,9 @@
 
 ## 安装
 
-从源码安装需要：
+普通用户请直接从项目的 GitHub Release 下载 `PPTist-Setup.exe` 并双击运行；不需要 Node.js、pnpm、.NET SDK 或 PowerShell。
+
+从源码构建安装包才需要：
 
 1. Windows x64。
 2. .NET 8 SDK（用于构建）；运行插件需要 .NET 8 Desktop Runtime。
@@ -22,6 +24,14 @@
 ```powershell
 powershell -ExecutionPolicy Bypass -File desktop/installer/Build-PPTistPlugin.ps1 -Install -StartNow
 ```
+
+如需生成供他人分发的单文件安装包：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File desktop/installer/Build-PPTistSetup.ps1
+```
+
+生成结果为 `desktop/release/PPTist-Setup.exe`。该文件内置插件、x64/x86 .NET Desktop Runtime，体积约 266 MB。
 
 安装器会同时生成 x64 与 x86 宿主组件，按 PowerPoint/WPS 实际位数自动注册，因此 Office x64 与 WPS x86 可以共存使用。安装只写入当前用户注册表，不要求管理员权限。
 
