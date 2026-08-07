@@ -1,5 +1,6 @@
 using PPTist.Overlay.Models;
 using PPTist.Overlay.Services;
+using System.IO;
 using System.Windows;
 
 namespace PPTist.Overlay;
@@ -15,12 +16,21 @@ public partial class App : Application
 
     private async void OnStartup(object sender, StartupEventArgs e)
     {
-        _overlay = new OverlayWindow();
-        await _overlay.InitializeAsync();
-
         _bridgeServer = new LocalBridgeServer(_widgetStore);
         _bridgeServer.WidgetsChanged += (_, _) => RenderCurrentSlide();
         _bridgeServer.Start();
+
+        try
+        {
+            _overlay = new OverlayWindow();
+            await _overlay.InitializeAsync();
+        }
+        catch (Exception exception)
+        {
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PPTistPlugin");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, "overlay-error.log"), exception.ToString());
+        }
 
         _slideShowMonitor.SlideChanged += (_, slide) =>
         {

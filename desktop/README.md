@@ -1,11 +1,11 @@
 # PPTist 本地 Office / WPS 插件
 
-这是 Windows 本地插件，不是网页端的“单文件同步工具”。安装一次后，当前 Windows 用户在 PowerPoint 或 WPS 演示中打开任何 PPT/PPTX，都可以直接使用 PPTist 动效入口。
+这是 Windows 本地插件，不是网页端的“单文件同步工具”。当前版本支持在任意 PowerPoint PPT/PPTX 中直接使用 PPTist 动效入口；WPS 365 需通过其官方签名插件渠道适配。
 
 ## 工作方式
 
 - PowerPoint：在功能区显示 **PPTist 动效** 选项卡，点击“插入或编辑动效”。
-- WPS 演示：后台运行器检测到 WPS 后自动加载同一个 COM 插件；支持功能区的版本会显示同名入口。
+- WPS：不同版本的第三方插件机制不兼容。WPS 365 当前采用带签名校验的内部插件系统，不能通过通用 COM Add-in 注入功能区。
 - 组件保存到本机 `%LOCALAPPDATA%\PPTistPlugin\widgets.json`，以“演示文件完整路径 + 页码”区分，所以不同 PPT 互不影响。
 - 放映时，透明 WebView2 覆盖层只渲染 HTML 动效；原 PPT 的动画窗格、触发器、音视频、切换效果仍由 Office/WPS 原生播放。
 
@@ -33,7 +33,7 @@ powershell -ExecutionPolicy Bypass -File desktop/installer/Build-PPTistSetup.ps1
 
 生成结果为 `desktop/release/PPTist-Setup.exe`。该文件内置插件、x64/x86 .NET Desktop Runtime，体积约 266 MB。
 
-安装器会同时生成 x64 与 x86 宿主组件，按 PowerPoint/WPS 实际位数自动注册，因此 Office x64 与 WPS x86 可以共存使用。安装只写入当前用户注册表，不要求管理员权限。
+安装器会同时生成 x64 与 x86 PowerPoint 宿主组件，安装只写入当前用户注册表，不要求管理员权限。
 
 安装完成后，请完全退出再重新打开 PowerPoint/WPS；可在 `文件 → 选项 → 加载项 → COM 加载项` 查看 `PPTist.HostAddin`。
 
@@ -51,4 +51,4 @@ powershell -ExecutionPolicy Bypass -File desktop/installer/Build-PPTistSetup.ps1
 
 本地首版已提供任意文稿的插件入口、当前页组件管理、三种内置组件与自定义 HTML/CSS/JS、PowerPoint/WPS 自动宿主加载及原生放映覆盖层。
 
-WPS 的功能区兼容性会随版本和授权类型不同而变化；若其版本未显示功能区入口，后台运行器仍会加载组件和跟随放映窗口。这个情况需要基于具体 WPS 版本继续适配其专有插件 API。
+WPS 365 的本机插件需要走其官方开发者插件渠道及签名机制；在没有该渠道的情况下，不能承诺会出现自定义功能区入口。当前安装包应视为 PowerPoint 本地插件安装包，而不是通用 WPS 365 插件。
