@@ -87,6 +87,18 @@ setInterval(() => {
 
 `.pptist` 是 PPTist 的工程文件，包含页面、元素、动画和 HTML/CSS/JavaScript 源码。它适合团队之间共享和继续编辑，不等同于 PowerPoint 的 `.pptx` 格式。
 
+## 保留原生 PPT 动画的 Office / WPS 放映
+
+如果你的原 PPT 动画、音视频和触发器必须 100% 由 Office/WPS 放映，请使用 `desktop/` 中的 Windows 原生放映助手。它自动识别已安装的 PowerPoint 和 WPS；两个都安装时同时支持，无需选择。HTML 组件以透明覆盖层叠加在原生放映窗口上，不会重新导入或重建 PPTX。
+
+在 Windows PowerShell 中执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File desktop/installer/Build-PPTistPlugin.ps1 -Install -StartNow
+```
+
+然后在编辑器左上角菜单点击“同步到 Office / WPS 原生放映”，填入原 PPTX 的完整路径并同步组件，最后回到 Office/WPS 按 F5 放映。详细说明见 [desktop/README.md](desktop/README.md)。
+
 ## 目录说明
 
 - `src/configs/htmlWidget.ts`：HTML 模板和粒子动效源码。

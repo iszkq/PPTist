@@ -28,3 +28,8 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# Windows overlay runtime build artifacts
+desktop/**/bin/
+desktop/**/obj/
+desktop/publish/

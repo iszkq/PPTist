@@ -1,0 +1,85 @@
+using PPTist.Overlay.Models;
+using System.IO;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+
+namespace PPTist.Overlay.Services;
+
+public sealed class LocalBridgeServer : IDisposable
+{
+    private readonly HttpListener _listener = new();
+    private readonly WidgetStore _widgetStore;
+    private readonly CancellationTokenSource _cancellation = new();
+    public event EventHandler? WidgetsChanged;
+
+    public LocalBridgeServer(WidgetStore widgetStore)
+    {
+        _widgetStore = widgetStore;
+        _listener.Prefixes.Add("http://127.0.0.1:32147/");
+    }
+
+    public void Start()
+    {
+        _listener.Start();
+        _ = Task.Run(ListenAsync);
+    }
+
+    private async Task ListenAsync()
+    {
+        while (!_cancellation.IsCancellationRequested)
+        {
+            try
+            {
+                var context = await _listener.GetContextAsync();
+                _ = Task.Run(() => HandleAsync(context));
+            }
+            catch when (_cancellation.IsCancellationRequested) { }
+            catch { }
+        }
+    }
+
+    private async Task HandleAsync(HttpListenerContext context)
+    {
+        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        context.Response.Headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS";
+        if (context.Request.HttpMethod == "OPTIONS") { context.Response.StatusCode = 204; context.Response.Close(); return; }
+        if (context.Request.Url?.AbsolutePath == "/health") { await WriteAsync(context.Response, 200, "{\"status\":\"ok\"}"); return; }
+        if (context.Request.Url?.AbsolutePath == "/widgets" && context.Request.HttpMethod == "POST")
+        {
+            try
+            {
+                using var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8);
+                var request = JsonSerializer.Deserialize<WidgetUpdateRequest>(await reader.ReadToEndAsync());
+                if (request is null || string.IsNullOrWhiteSpace(request.PresentationKey)) throw new InvalidOperationException();
+                _widgetStore.ReplaceForPresentation(request.PresentationKey, request.Widgets ?? []);
+                WidgetsChanged?.Invoke(this, EventArgs.Empty);
+                await WriteAsync(context.Response, 200, "{\"status\":\"saved\"}");
+            }
+            catch { await WriteAsync(context.Response, 400, "{\"error\":\"invalid widget payload\"}"); }
+            return;
+        }
+        await WriteAsync(context.Response, 404, "{\"error\":\"not found\"}");
+    }
+
+    private static async Task WriteAsync(HttpListenerResponse response, int statusCode, string payload)
+    {
+        response.StatusCode = statusCode;
+        response.ContentType = "application/json; charset=utf-8";
+        await response.OutputStream.WriteAsync(Encoding.UTF8.GetBytes(payload));
+        response.Close();
+    }
+
+    public void Dispose()
+    {
+        _cancellation.Cancel();
+        if (_listener.IsListening) _listener.Stop();
+        _listener.Close();
+    }
+
+    private sealed class WidgetUpdateRequest
+    {
+        public string PresentationKey { get; set; } = string.Empty;
+        public List<WidgetDefinition>? Widgets { get; set; }
+    }
+}
