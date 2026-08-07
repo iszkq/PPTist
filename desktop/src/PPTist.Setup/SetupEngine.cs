@@ -37,15 +37,8 @@ internal sealed class SetupEngine(Action<string> report)
     {
         var assemblyPath = Path.Combine(_root, "powerpoint-addin", "PPTist.PowerPointAddin.dll");
         if (!File.Exists(assemblyPath)) throw new InvalidOperationException("缺少 PowerPoint 功能区组件。");
-        var assemblyName = AssemblyName.GetAssemblyName(assemblyPath).FullName;
+        RegisterFrameworkComAssembly(assemblyPath);
         using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
-        using var inproc = baseKey.CreateSubKey(@"Software\Classes\CLSID\" + PowerPointClsid + @"\InprocServer32", true);
-        inproc?.SetValue(null, "mscoree.dll");
-        inproc?.SetValue("ThreadingModel", "Both");
-        inproc?.SetValue("Class", "PPTist.PowerPointAddin.PPTistAddin");
-        inproc?.SetValue("Assembly", assemblyName);
-        inproc?.SetValue("RuntimeVersion", "v4.0.30319");
-        inproc?.SetValue("CodeBase", new Uri(assemblyPath).AbsoluteUri);
         using var prog = baseKey.CreateSubKey(@"Software\Classes\" + PowerPointProgId, true);
         prog?.SetValue(null, "PPTist PowerPoint HTML 动效");
         using var progClsid = prog?.CreateSubKey("CLSID", true);
@@ -54,6 +47,22 @@ internal sealed class SetupEngine(Action<string> report)
         addin?.SetValue("FriendlyName", "PPTist 动效");
         addin?.SetValue("Description", "本地 HTML/CSS/JavaScript 动效编辑器");
         addin?.SetValue("LoadBehavior", 3, RegistryValueKind.DWord);
+    }
+
+    private static void RegisterFrameworkComAssembly(string assemblyPath)
+    {
+        var regasm = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Microsoft.NET", "Framework", "v4.0.30319", "RegAsm.exe");
+        if (!File.Exists(regasm)) throw new InvalidOperationException("未找到 .NET Framework 的 PowerPoint 注册组件。");
+        RunRegAsm(regasm, '"' + assemblyPath + '"' + " /unregister");
+        RunRegAsm(regasm, '"' + assemblyPath + '"' + " /codebase");
+    }
+
+    private static void RunRegAsm(string regasm, string arguments)
+    {
+        using var process = Process.Start(new ProcessStartInfo(regasm, arguments) { UseShellExecute = false, CreateNoWindow = true })
+            ?? throw new InvalidOperationException("无法启动 PowerPoint 注册组件。");
+        process.WaitForExit();
+        if (process.ExitCode != 0) throw new InvalidOperationException("PowerPoint 功能区注册失败，错误代码：" + process.ExitCode);
     }
 
     private static void RemoveRetiredComAddin()

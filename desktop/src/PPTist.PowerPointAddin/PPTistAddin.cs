@@ -7,7 +7,7 @@ namespace PPTist.PowerPointAddin;
 [ComVisible(true)]
 [Guid("B8CC85F4-0E1B-4C4D-9C31-5361DF0C8AC0")]
 [ProgId("PPTist.PowerPointAddin")]
-[ClassInterface(ClassInterfaceType.None)]
+[ClassInterface(ClassInterfaceType.AutoDual)]
 public sealed class PPTistAddin : IDTExtensibility2, IRibbonExtensibility
 {
     private object _application;
