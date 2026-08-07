@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from 'node:url'
-import { cpSync, existsSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import Icons from 'unplugin-icons/vite'
@@ -11,14 +10,6 @@ import Components from 'unplugin-vue-components/vite'
 export default defineConfig({
   base: '',
   plugins: [
-    {
-      name: 'copy-office-addin-taskpane',
-      closeBundle() {
-        const source = fileURLToPath(new URL('./office-addin', import.meta.url))
-        const destination = fileURLToPath(new URL('./dist/office-addin', import.meta.url))
-        if (existsSync(source)) cpSync(source, destination, { recursive: true })
-      },
-    },
     vue(),
     Components({
       dirs: [],

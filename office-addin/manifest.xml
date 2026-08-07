@@ -6,12 +6,12 @@
   <DefaultLocale>zh-CN</DefaultLocale>
   <DisplayName DefaultValue="PPTist HTML Animation"/>
   <Description DefaultValue="HTML, CSS, and JavaScript animation tools for Microsoft PowerPoint."/>
-  <IconUrl DefaultValue="https://pptist.pages.dev/logo.png"/>
-  <HighResolutionIconUrl DefaultValue="https://pptist.pages.dev/logo.png"/>
+  <IconUrl DefaultValue="http://localhost:32147/office-addin/icon.png"/>
+  <HighResolutionIconUrl DefaultValue="http://localhost:32147/office-addin/icon.png"/>
   <SupportUrl DefaultValue="https://github.com/iszkq/PPTist"/>
-  <AppDomains><AppDomain>https://pptist.pages.dev</AppDomain><AppDomain>http://127.0.0.1:32147</AppDomain></AppDomains>
+  <AppDomains><AppDomain>http://localhost:32147</AppDomain></AppDomains>
   <Hosts><Host Name="Presentation"/></Hosts>
-  <DefaultSettings><SourceLocation DefaultValue="https://pptist.pages.dev/office-addin/taskpane.html"/></DefaultSettings>
+  <DefaultSettings><SourceLocation DefaultValue="http://localhost:32147/office-addin/taskpane.html"/></DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
     <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides/1.1" xsi:type="VersionOverridesV1_0">
@@ -28,8 +28,8 @@
         </Group><Label resid="Tab.Label"/></CustomTab></ExtensionPoint>
       </DesktopFormFactor></Host></Hosts>
       <Resources>
-        <bt:Images><bt:Image id="Icon.16" DefaultValue="https://pptist.pages.dev/logo.png"/><bt:Image id="Icon.32" DefaultValue="https://pptist.pages.dev/logo.png"/><bt:Image id="Icon.80" DefaultValue="https://pptist.pages.dev/logo.png"/></bt:Images>
-        <bt:Urls><bt:Url id="Commands.Url" DefaultValue="https://pptist.pages.dev/office-addin/commands.html"/><bt:Url id="Taskpane.Url" DefaultValue="https://pptist.pages.dev/office-addin/taskpane.html"/></bt:Urls>
+        <bt:Images><bt:Image id="Icon.16" DefaultValue="http://localhost:32147/office-addin/icon.png"/><bt:Image id="Icon.32" DefaultValue="http://localhost:32147/office-addin/icon.png"/><bt:Image id="Icon.80" DefaultValue="http://localhost:32147/office-addin/icon.png"/></bt:Images>
+        <bt:Urls><bt:Url id="Commands.Url" DefaultValue="http://localhost:32147/office-addin/commands.html"/><bt:Url id="Taskpane.Url" DefaultValue="http://localhost:32147/office-addin/taskpane.html"/></bt:Urls>
         <bt:ShortStrings><bt:String id="Tab.Label" DefaultValue="PPTist Animation"/><bt:String id="Group.Label" DefaultValue="HTML Animation"/><bt:String id="Button.Label" DefaultValue="Open Animation Pane"/></bt:ShortStrings>
         <bt:LongStrings><bt:String id="Button.Description" DefaultValue="Add, edit, and save PPTist HTML animations for this presentation."/></bt:LongStrings>
       </Resources>
