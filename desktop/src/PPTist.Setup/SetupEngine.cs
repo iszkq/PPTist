@@ -10,6 +10,8 @@ namespace PPTist.Setup;
 internal sealed class SetupEngine(Action<string> report)
 {
     private static readonly Guid CatalogId = new("2c7d5d7a-2664-4b59-b8d1-37c2cfecf43a");
+    private const string PowerPointProgId = "PPTist.PowerPointAddin";
+    private const string PowerPointClsid = "{B8CC85F4-0E1B-4C4D-9C31-5361DF0C8AC0}";
     private readonly Action<string> _report = report;
     private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
     private readonly string _root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PPTistPlugin");
@@ -20,12 +22,51 @@ internal sealed class SetupEngine(Action<string> report)
         StopInstalledOverlay();
         _report("正在释放 PPTist 放映组件…");
         ExtractPayload();
-        _report("正在配置 PowerPoint 加载项目录…");
+        _report("正在注册 PowerPoint 功能区…");
+        RemoveRetiredComAddin();
+        RegisterPowerPointRibbon();
+        _report("正在配置本地编辑面板…");
         RegisterSharedFolderCatalog();
         WriteInstructions();
         _report("正在启动透明放映覆盖层…");
         EnableStartup();
         StartOverlay();
+    }
+
+    private void RegisterPowerPointRibbon()
+    {
+        var assemblyPath = Path.Combine(_root, "powerpoint-addin", "PPTist.PowerPointAddin.dll");
+        if (!File.Exists(assemblyPath)) throw new InvalidOperationException("缺少 PowerPoint 功能区组件。");
+        var assemblyName = AssemblyName.GetAssemblyName(assemblyPath).FullName;
+        using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
+        using var inproc = baseKey.CreateSubKey(@"Software\Classes\CLSID\" + PowerPointClsid + @"\InprocServer32", true);
+        inproc?.SetValue(null, "mscoree.dll");
+        inproc?.SetValue("ThreadingModel", "Both");
+        inproc?.SetValue("Class", "PPTist.PowerPointAddin.PPTistAddin");
+        inproc?.SetValue("Assembly", assemblyName);
+        inproc?.SetValue("RuntimeVersion", "v4.0.30319");
+        inproc?.SetValue("CodeBase", new Uri(assemblyPath).AbsoluteUri);
+        using var prog = baseKey.CreateSubKey(@"Software\Classes\" + PowerPointProgId, true);
+        prog?.SetValue(null, "PPTist PowerPoint HTML 动效");
+        using var progClsid = prog?.CreateSubKey("CLSID", true);
+        progClsid?.SetValue(null, PowerPointClsid);
+        using var addin = baseKey.CreateSubKey(@"Software\Microsoft\Office\PowerPoint\Addins\" + PowerPointProgId, true);
+        addin?.SetValue("FriendlyName", "PPTist 动效");
+        addin?.SetValue("Description", "本地 HTML/CSS/JavaScript 动效编辑器");
+        addin?.SetValue("LoadBehavior", 3, RegistryValueKind.DWord);
+    }
+
+    private static void RemoveRetiredComAddin()
+    {
+        const string oldProgId = "PPTist.HostAddin";
+        const string oldClsid = "{E5707554-F46A-4F29-A918-5FEAD9A8F136}";
+        foreach (var view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
+        {
+            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, view);
+            baseKey.DeleteSubKeyTree(@"Software\Microsoft\Office\PowerPoint\Addins\" + oldProgId, false);
+            baseKey.DeleteSubKeyTree(@"Software\Classes\" + oldProgId, false);
+            baseKey.DeleteSubKeyTree(@"Software\Classes\CLSID\" + oldClsid, false);
+        }
     }
 
     private void StopInstalledOverlay()
@@ -88,11 +129,10 @@ internal sealed class SetupEngine(Action<string> report)
         var file = Path.Combine(_root, "PowerPoint-启用说明.txt");
         File.WriteAllText(file, "PPTist HTML 动效\r\n\r\n" +
             "1. 完全退出并重新打开 Microsoft PowerPoint。\r\n" +
-            "2. 文件 → 获取加载项 → 管理我的加载项 → 上传我的加载项。\r\n" +
-            "3. 选择本文件夹中的 office-addin\\manifest.xml。\r\n" +
-            "4. 打开任意 PPT/PPTX，在功能区点击“PPTist 动效 → 打开动效面板”。\r\n\r\n" +
-            "只支持 Microsoft PowerPoint；本安装包不会向 PowerPoint 注入 COM/.NET 代码。\r\n" +
-            "如果看不到上传入口，请在 PowerPoint 的加载项管理页选择“管理我的加载项”。\r\n", System.Text.Encoding.UTF8);
+            "2. 打开任意 PPT/PPTX。\r\n" +
+            "3. 在功能区找到“PPTist 动效”，点击“打开动效面板”。\r\n" +
+            "4. 输入 HTML、CSS、JavaScript，保存后按 F5 放映。\r\n\r\n" +
+            "不需要“获取加载项”菜单，也不依赖网页。\r\n", System.Text.Encoding.UTF8);
     }
 
     private void EnableStartup()
