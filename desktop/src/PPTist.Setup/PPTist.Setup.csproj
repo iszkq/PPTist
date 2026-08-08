@@ -14,8 +14,5 @@
     <EmbeddedResource Include="$(PPTistPayloadDir)\office-addin\**\*">
       <LogicalName>payload/office-addin/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
-    <EmbeddedResource Include="$(PPTistPayloadDir)\powerpoint-addin\**\*">
-      <LogicalName>payload/powerpoint-addin/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
   </ItemGroup>
 </Project>

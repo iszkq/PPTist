@@ -14,8 +14,8 @@ public partial class SetupWindow : Window
             await Task.Run(installer.Install);
             Progress.IsIndeterminate = false;
             Progress.Value = 100;
-            StatusText.Text = "安装完成。请重新打开 PowerPoint，在功能区使用“PPTist 动效”。";
-            MessageBox.Show("PPTist PowerPoint 插件安装完成。\n\n请完全退出并重新打开 PowerPoint，然后在顶部功能区找到“PPTist 动效”。", "PPTist 安装完成", MessageBoxButton.OK, MessageBoxImage.Information);
+            StatusText.Text = "安装完成。请在 PowerPoint 的“加载项”中上传 manifest.xml。";
+            MessageBox.Show("PPTist 本地放映组件安装完成。\n\n请完全退出并重新打开 PowerPoint，然后点击“开始”选项卡最右侧的“加载项”，上传 manifest.xml。", "PPTist 安装完成", MessageBoxButton.OK, MessageBoxImage.Information);
             Close();
         }
         catch (Exception exception)

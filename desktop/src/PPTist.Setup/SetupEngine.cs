@@ -22,9 +22,8 @@ internal sealed class SetupEngine(Action<string> report)
         StopInstalledOverlay();
         _report("正在释放 PPTist 放映组件…");
         ExtractPayload();
-        _report("正在注册 PowerPoint 功能区…");
+        _report("正在清理旧版 PowerPoint 加载项…");
         RemoveRetiredComAddin();
-        RegisterPowerPointRibbon();
         _report("正在配置本地编辑面板…");
         RegisterSharedFolderCatalog();
         WriteInstructions();
@@ -33,48 +32,22 @@ internal sealed class SetupEngine(Action<string> report)
         StartOverlay();
     }
 
-    private void RegisterPowerPointRibbon()
-    {
-        var assemblyPath = Path.Combine(_root, "powerpoint-addin", "PPTist.PowerPointAddin.dll");
-        if (!File.Exists(assemblyPath)) throw new InvalidOperationException("缺少 PowerPoint 功能区组件。");
-        RegisterFrameworkComAssembly(assemblyPath);
-        using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
-        using var prog = baseKey.CreateSubKey(@"Software\Classes\" + PowerPointProgId, true);
-        prog?.SetValue(null, "PPTist PowerPoint HTML 动效");
-        using var progClsid = prog?.CreateSubKey("CLSID", true);
-        progClsid?.SetValue(null, PowerPointClsid);
-        using var addin = baseKey.CreateSubKey(@"Software\Microsoft\Office\PowerPoint\Addins\" + PowerPointProgId, true);
-        addin?.SetValue("FriendlyName", "PPTist 动效");
-        addin?.SetValue("Description", "本地 HTML/CSS/JavaScript 动效编辑器");
-        addin?.SetValue("LoadBehavior", 3, RegistryValueKind.DWord);
-    }
-
-    private static void RegisterFrameworkComAssembly(string assemblyPath)
-    {
-        var regasm = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Microsoft.NET", "Framework", "v4.0.30319", "RegAsm.exe");
-        if (!File.Exists(regasm)) throw new InvalidOperationException("未找到 .NET Framework 的 PowerPoint 注册组件。");
-        RunRegAsm(regasm, '"' + assemblyPath + '"' + " /unregister");
-        RunRegAsm(regasm, '"' + assemblyPath + '"' + " /codebase");
-    }
-
-    private static void RunRegAsm(string regasm, string arguments)
-    {
-        using var process = Process.Start(new ProcessStartInfo(regasm, arguments) { UseShellExecute = false, CreateNoWindow = true })
-            ?? throw new InvalidOperationException("无法启动 PowerPoint 注册组件。");
-        process.WaitForExit();
-        if (process.ExitCode != 0) throw new InvalidOperationException("PowerPoint 功能区注册失败，错误代码：" + process.ExitCode);
-    }
-
     private static void RemoveRetiredComAddin()
     {
-        const string oldProgId = "PPTist.HostAddin";
-        const string oldClsid = "{E5707554-F46A-4F29-A918-5FEAD9A8F136}";
+        var obsolete = new[]
+        {
+            (ProgId: "PPTist.HostAddin", Clsid: "{E5707554-F46A-4F29-A918-5FEAD9A8F136}"),
+            (ProgId: PowerPointProgId, Clsid: PowerPointClsid),
+        };
         foreach (var view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
         {
             using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, view);
-            baseKey.DeleteSubKeyTree(@"Software\Microsoft\Office\PowerPoint\Addins\" + oldProgId, false);
-            baseKey.DeleteSubKeyTree(@"Software\Classes\" + oldProgId, false);
-            baseKey.DeleteSubKeyTree(@"Software\Classes\CLSID\" + oldClsid, false);
+            foreach (var addin in obsolete)
+            {
+                baseKey.DeleteSubKeyTree(@"Software\Microsoft\Office\PowerPoint\Addins\" + addin.ProgId, false);
+                baseKey.DeleteSubKeyTree(@"Software\Classes\" + addin.ProgId, false);
+                baseKey.DeleteSubKeyTree(@"Software\Classes\CLSID\" + addin.Clsid, false);
+            }
         }
     }
 
@@ -138,10 +111,10 @@ internal sealed class SetupEngine(Action<string> report)
         var file = Path.Combine(_root, "PowerPoint-启用说明.txt");
         File.WriteAllText(file, "PPTist HTML 动效\r\n\r\n" +
             "1. 完全退出并重新打开 Microsoft PowerPoint。\r\n" +
-            "2. 打开任意 PPT/PPTX。\r\n" +
-            "3. 在功能区找到“PPTist 动效”，点击“打开动效面板”。\r\n" +
-            "4. 输入 HTML、CSS、JavaScript，保存后按 F5 放映。\r\n\r\n" +
-            "不需要“获取加载项”菜单，也不依赖网页。\r\n", System.Text.Encoding.UTF8);
+            "2. 在“开始”选项卡最右侧点击橙色九宫格“加载项”。\r\n" +
+            "3. 在“我的加载项”中选择“上传我的加载项”，选择 office-addin\\manifest.xml。\r\n" +
+            "4. 打开 PPTist 任务窗格，输入 HTML、CSS、JavaScript，保存后按 F5 放映。\r\n\r\n" +
+            "本安装包不会向 PowerPoint 进程注册 COM/.NET 加载项。\r\n", System.Text.Encoding.UTF8);
     }
 
     private void EnableStartup()
